@@ -1,69 +1,124 @@
 {% extends 'base.html' %}
 
-{% block title %}Testar Resposta IA{% endblock %}
+{% block title %}Testar IA{% endblock %}
 
 {% block content %}
 <div class="container py-4">
-    <h1 class="mb-4">Testar Resposta da IA</h1>
+    <h1 class="mb-4">Testar Resposta IA</h1>
     
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Reclamação de Teste</h5>
-                </div>
-                <div class="card-body">
-                    <form method="post" action="/test_response">
-                        <div class="mb-3">
-                            <label for="customer_name" class="form-label">Nome do Cliente</label>
-                            <input type="text" class="form-control" id="customer_name" name="customer_name" value="{{ customer_name or 'Cliente Teste' }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="complaint_text" class="form-label">Texto da Reclamação</label>
-                            <textarea class="form-control" id="complaint_text" name="complaint_text" rows="6" required>{{ complaint_text or '' }}</textarea>
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Gerar Resposta</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Simulação de Reclamação</h5>
         </div>
-        
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Resposta da IA</h5>
+        <div class="card-body">
+            {% if response_text %}
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Reclamação de {{ customer_name }}</h6>
+                            </div>
+                            <div class="card-body bg-light">
+                                <p>{{ complaint_text|nl2br }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0 d-flex justify-content-between align-items-center">
+                                    Resposta Gerada
+                                    <span class="badge bg-light text-dark">{{ generation_time }}s</span>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p>{{ response_text|nl2br }}</p>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">Modelo: {{ model_name }}</small>
+                                    <div>
+                                        <span class="badge bg-secondary">{{ response_text|length }} caracteres</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    {% if response_text %}
-                        <div class="mb-3">
-                            <p><strong>Resposta gerada para:</strong> {{ customer_name }}</p>
-                            <div class="alert alert-light mt-3">
-                                {{ response_text|nl2br }}
-                            </div>
-                            <div class="mt-4">
-                                <p><small>Gerado em {{ generation_time }} segundos utilizando o modelo {{ model_name }}</small></p>
-                            </div>
+                
+                <form action="/save_test" method="post" class="mt-3">
+                    <input type="hidden" name="customer_name" value="{{ customer_name }}">
+                    <input type="hidden" name="complaint_text" value="{{ complaint_text }}">
+                    <input type="hidden" name="response_text" value="{{ response_text }}">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-secondary me-md-2" onclick="window.location.href='/test'">Criar Novo Teste</button>
+                        <button type="submit" class="btn btn-primary">Salvar no Banco de Dados</button>
+                    </div>
+                </form>
+            {% else %}
+                <form action="/test_response" method="post">
+                    <div class="mb-3">
+                        <label for="customer_name" class="form-label">Nome do Cliente</label>
+                        <input type="text" class="form-control" id="customer_name" name="customer_name" 
+                               value="Cliente Teste" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="complaint_text" class="form-label">Texto da Reclamação</label>
+                        <textarea class="form-control" id="complaint_text" name="complaint_text" 
+                                  rows="6" required placeholder="Digite aqui o texto da reclamação..."></textarea>
+                        <div class="form-text">Digite o texto da reclamação como se fosse um cliente insatisfeito.</div>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary">Gerar Resposta</button>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Exemplos de Reclamações</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">Atraso na Entrega</div>
+                        <div class="card-body">
+                            <p class="small">Fiz um pedido há 15 dias e ainda não recebi. O prazo informado era de 7 dias úteis. Já tentei contato por e-mail, telefone e chat mas nunca resolvem meu problema. Quero que entreguem meu pedido imediatamente ou devolvam meu dinheiro. Nunca mais compro com essa empresa!</p>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="copyText('atraso')">Copiar</button>
+                            <div class="d-none" id="atraso">Fiz um pedido há 15 dias e ainda não recebi. O prazo informado era de 7 dias úteis. Já tentei contato por e-mail, telefone e chat mas nunca resolvem meu problema. Quero que entreguem meu pedido imediatamente ou devolvam meu dinheiro. Nunca mais compro com essa empresa!</div>
                         </div>
-                        <div class="d-grid gap-2">
-                            <button type="button" class="btn btn-outline-success copy-btn" data-clipboard-text="{{ response_text }}">
-                                Copiar Resposta
-                            </button>
-                            <form method="post" action="/save_test">
-                                <input type="hidden" name="customer_name" value="{{ customer_name }}">
-                                <input type="hidden" name="complaint_text" value="{{ complaint_text }}">
-                                <input type="hidden" name="response_text" value="{{ response_text }}">
-                                <button type="submit" class="btn btn-outline-primary w-100">
-                                    Salvar no Banco de Dados
-                                </button>
-                            </form>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">Cobrança Indevida</div>
+                        <div class="card-body">
+                            <p class="small">Estou sendo cobrado por um serviço que cancelei há 3 meses. Já enviei todos os protocolos e comprovantes do cancelamento para vocês diversas vezes, mas continuam me cobrando. Isso é ilegal! Vou registrar queixa na Anatel e no Procon se não resolverem imediatamente.</p>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="copyText('cobranca')">Copiar</button>
+                            <div class="d-none" id="cobranca">Estou sendo cobrado por um serviço que cancelei há 3 meses. Já enviei todos os protocolos e comprovantes do cancelamento para vocês diversas vezes, mas continuam me cobrando. Isso é ilegal! Vou registrar queixa na Anatel e no Procon se não resolverem imediatamente.</div>
                         </div>
-                    {% else %}
-                        <div class="alert alert-info">
-                            Digite uma reclamação à esquerda e clique em "Gerar Resposta" para ver a resposta da IA aqui.
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">Produto com Defeito</div>
+                        <div class="card-body">
+                            <p class="small">Comprei um notebook na loja de vocês há apenas 2 meses e ele já está apresentando defeito na tela. Abri um chamado há 15 dias e ninguém me deu retorno. Quero a troca imediata do aparelho ou devolução do dinheiro conforme prevê o Código de Defesa do Consumidor.</p>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="copyText('defeito')">Copiar</button>
+                            <div class="d-none" id="defeito">Comprei um notebook na loja de vocês há apenas 2 meses e ele já está apresentando defeito na tela. Abri um chamado há 15 dias e ninguém me deu retorno. Quero a troca imediata do aparelho ou devolução do dinheiro conforme prevê o Código de Defesa do Consumidor.</div>
                         </div>
-                    {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">Mau Atendimento</div>
+                        <div class="card-body">
+                            <p class="small">Fui extremamente mal atendido pela funcionária na loja do shopping. Ela foi rude, impaciente e não soube responder minhas dúvidas básicas sobre o produto. Quando pedi para falar com o gerente, ela disse que não estava disponível. Exijo um pedido de desculpas formal e treinamento adequado para seus funcionários.</p>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="copyText('atendimento')">Copiar</button>
+                            <div class="d-none" id="atendimento">Fui extremamente mal atendido pela funcionária na loja do shopping. Ela foi rude, impaciente e não soube responder minhas dúvidas básicas sobre o produto. Quando pedi para falar com o gerente, ela disse que não estava disponível. Exijo um pedido de desculpas formal e treinamento adequado para seus funcionários.</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -72,28 +127,11 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize clipboard.js
-        new ClipboardJS('.copy-btn');
-        
-        // Add feedback when copying
-        const copyBtn = document.querySelector('.copy-btn');
-        if (copyBtn) {
-            copyBtn.addEventListener('click', function() {
-                const originalText = copyBtn.textContent;
-                copyBtn.textContent = 'Copiado!';
-                copyBtn.classList.remove('btn-outline-success');
-                copyBtn.classList.add('btn-success');
-                
-                setTimeout(function() {
-                    copyBtn.textContent = originalText;
-                    copyBtn.classList.remove('btn-success');
-                    copyBtn.classList.add('btn-outline-success');
-                }, 2000);
-            });
-        }
-    });
+    function copyText(id) {
+        const text = document.getElementById(id).textContent;
+        document.getElementById('complaint_text').value = text;
+        window.scrollTo(0, 0);
+    }
 </script>
 {% endblock %}
