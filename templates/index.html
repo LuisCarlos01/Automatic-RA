@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Painel de Controle</h1>
+    
+    <!-- Status do Bot -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Status do Bot</h5>
+        </div>
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    {% if bot_running %}
+                        <span class="badge bg-success p-2">Em execução</span>
+                    {% else %}
+                        <span class="badge bg-secondary p-2">Inativo</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <p class="mb-0">
+                        {% if bot_running %}
+                            O bot está atualmente processando reclamações.
+                        {% else %}
+                            O bot está inativo. Clique em "Executar Agora" para processamento manual ou "Iniciar Agendador" para iniciar o processamento automático.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Reclamações</h5>
+                    <h2 class="display-4">{{ stats.total }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Concluídas</h5>
+                    <h2 class="display-4 text-success">{{ stats.completed }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Falhas</h5>
+                    <h2 class="display-4 text-danger">{{ stats.failed }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Taxa de Sucesso</h5>
+                    <h2 class="display-4">{{ "%.1f"|format(stats.success_rate) }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reclamações Recentes -->
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Reclamações Recentes</h5>
+            <a href="/complaints" class="btn btn-sm btn-primary">Ver Todas</a>
+        </div>
+        <div class="card-body">
+            {% if complaints %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Reclamação</th>
+                                <th>Resposta</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for complaint in complaints %}
+                                <tr>
+                                    <td>{{ complaint.complaint_id }}</td>
+                                    <td>{{ complaint.customer_name }}</td>
+                                    <td>{{ complaint.complaint_text[:50] }}{% if complaint.complaint_text|length > 50 %}...{% endif %}</td>
+                                    <td>{{ complaint.response_text[:50] }}{% if complaint.response_text|length > 50 %}...{% endif %}</td>
+                                    <td>
+                                        {% if complaint.status == 'completed' %}
+                                            <span class="badge bg-success">Concluído</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Falha</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ complaint.created_at.split('T')[0] }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    Ainda não há reclamações processadas.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Configurações -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Configurações</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong>Intervalo de Verificação:</strong> 
+                        <span class="ms-2">{{ CHECK_INTERVAL_MINUTES }} minutos</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Navegador:</strong> 
+                        <span class="ms-2 text-capitalize">{{ BROWSER_TYPE }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong>Status das Credenciais:</strong>
+                        <div class="mt-2">
+                            <div class="d-flex align-items-center mb-2">
+                                <strong class="me-2">Reclame Aqui:</strong>
+                                {% if RECLAMEAQUI_EMAIL and RECLAMEAQUI_PASSWORD %}
+                                    <span class="badge bg-success">Configurado</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Não Configurado</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <strong class="me-2">OpenAI API:</strong>
+                                {% if OPENAI_API_KEY %}
+                                    <span class="badge bg-success">Configurado</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Não Configurado</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Atualizar status do bot a cada 5 segundos
+    setInterval(function() {
+        fetch('/api/status')
+            .then(response => response.json())
+            .then(data => {
+                const statusBadge = document.querySelector('.card-body .badge');
+                const statusText = document.querySelector('.card-body p');
+                
+                if (data.running) {
+                    statusBadge.className = 'badge bg-success p-2';
+                    statusBadge.textContent = 'Em execução';
+                    statusText.textContent = 'O bot está atualmente processando reclamações.';
+                } else {
+                    statusBadge.className = 'badge bg-secondary p-2';
+                    statusBadge.textContent = 'Inativo';
+                    statusText.textContent = 'O bot está inativo. Clique em "Executar Agora" para processamento manual ou "Iniciar Agendador" para iniciar o processamento automático.';
+                }
+            });
+    }, 5000);
+</script>
+{% endblock %}

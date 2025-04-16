@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reclame Aqui Bot - {% block title %}Painel de Controle{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: var(--bs-dark);
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .badge-completed {
+            background-color: var(--bs-success);
+        }
+        .badge-failed {
+            background-color: var(--bs-danger);
+        }
+        .card {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="p-3 text-center">
+                        <h4 class="mb-0">Reclame Aqui Bot</h4>
+                        <p class="text-muted">Automação de Atendimento</p>
+                    </div>
+                    <hr>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/complaints' %}active{% endif %}" href="/complaints">
+                                Reclamações
+                            </a>
+                        </li>
+                    </ul>
+                    <hr>
+                    <div class="p-3">
+                        <form action="/run_once" method="post">
+                            <button type="submit" class="btn btn-primary w-100 mb-2">
+                                Executar Agora
+                            </button>
+                        </form>
+                        <form action="/start_bot" method="post">
+                            <button type="submit" class="btn btn-success w-100 mb-2">
+                                Iniciar Agendador
+                            </button>
+                        </form>
+                        <form action="/export" method="post">
+                            <button type="submit" class="btn btn-secondary w-100">
+                                Exportar Dados
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Page content -->
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

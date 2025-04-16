@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Reclamações{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Todas as Reclamações</h1>
+    
+    {% if complaints %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Reclamação</th>
+                                <th>Resposta</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for complaint in complaints %}
+                                <tr>
+                                    <td>{{ complaint.complaint_id }}</td>
+                                    <td>{{ complaint.customer_name }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#complaint{{ loop.index }}">
+                                            {{ complaint.complaint_text[:50] }}{% if complaint.complaint_text|length > 50 %}...{% endif %}
+                                        </button>
+                                        <div class="collapse mt-2" id="complaint{{ loop.index }}">
+                                            <div class="card card-body">
+                                                {{ complaint.complaint_text }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#response{{ loop.index }}">
+                                            {{ complaint.response_text[:50] }}{% if complaint.response_text|length > 50 %}...{% endif %}
+                                        </button>
+                                        <div class="collapse mt-2" id="response{{ loop.index }}">
+                                            <div class="card card-body">
+                                                {{ complaint.response_text }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if complaint.status == 'completed' %}
+                                            <span class="badge bg-success">Concluído</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Falha</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ complaint.created_at.split('T')[0] }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Ainda não há reclamações processadas.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
