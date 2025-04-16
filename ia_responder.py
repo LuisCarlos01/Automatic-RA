@@ -27,12 +27,13 @@ class IAResponder:
         
         logger.info("IAResponder initialized with OpenAI API")
     
-    def generate_response(self, complaint_text):
+    def generate_response(self, complaint_text, system_prompt=None):
         """
         Generate a response to a customer complaint using the OpenAI API.
         
         Args:
             complaint_text (str): The text of the customer complaint
+            system_prompt (str, optional): Custom system prompt to use for this response
             
         Returns:
             str: AI-generated response to the complaint
@@ -41,15 +42,22 @@ class IAResponder:
             logger.info(f"Generating response for complaint: {complaint_text[:50]}...")
             
             # Create the prompt for the AI
-            system_prompt = (
-                "Você é um atendente profissional da empresa iPass. "
-                "Responda a reclamação de forma cordial, resolutiva e empática. "
-                "Use linguagem formal e profissional, mas amigável. "
-                "Peça desculpas pelo transtorno, reconheça o problema e "
-                "ofereça soluções práticas. Encerre agradecendo a oportunidade "
-                "de resolver a situação. "
-                "Limite a resposta a um máximo de 500 caracteres."
-            )
+            if system_prompt is None:
+                # Try to get the system prompt from environment
+                import os
+                system_prompt = os.getenv("SYSTEM_PROMPT")
+                
+                # If still None, use default
+                if system_prompt is None:
+                    system_prompt = (
+                        "Você é um atendente profissional da empresa iPass. "
+                        "Responda a reclamação de forma cordial, resolutiva e empática. "
+                        "Use linguagem formal e profissional, mas amigável. "
+                        "Peça desculpas pelo transtorno, reconheça o problema e "
+                        "ofereça soluções práticas. Encerre agradecendo a oportunidade "
+                        "de resolver a situação. "
+                        "Limite a resposta a um máximo de 500 caracteres."
+                    )
             
             user_prompt = f"Reclamação: '{complaint_text}'. Responda de forma clara e objetiva."
             

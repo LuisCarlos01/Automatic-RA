@@ -46,6 +46,16 @@
                                 Reclamações
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/test' %}active{% endif %}" href="/test">
+                                Testar IA
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/config' %}active{% endif %}" href="/config">
+                                Configurações
+                            </a>
+                        </li>
                     </ul>
                     <hr>
                     <div class="p-3">

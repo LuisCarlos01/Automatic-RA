@@ -31,6 +31,17 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 CHECK_INTERVAL_MINUTES = int(os.getenv("CHECK_INTERVAL_MINUTES", "60"))
 BROWSER_TYPE = os.getenv("BROWSER_TYPE", "chrome").lower()  # chrome or firefox
 
+# Default prompt for OpenAI
+SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", 
+    "Você é um atendente profissional da empresa iPass. "
+    "Responda a reclamação de forma cordial, resolutiva e empática. "
+    "Use linguagem formal e profissional, mas amigável. "
+    "Peça desculpas pelo transtorno, reconheça o problema e "
+    "ofereça soluções práticas. Encerre agradecendo a oportunidade "
+    "de resolver a situação. "
+    "Limite a resposta a um máximo de 500 caracteres."
+)
+
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "reclameaqui-bot-secret-key")
@@ -82,7 +93,7 @@ def process_complaints():
             logger.info(f"Processing complaint ID: {complaint['id']}")
             
             # Generate AI response
-            response_text = responder.generate_response(complaint['text'])
+            response_text = responder.generate_response(complaint['text'], system_prompt=SYSTEM_PROMPT)
             
             # Submit response
             response_success = reclama_bot.submit_response(complaint['id'], response_text)
@@ -218,6 +229,200 @@ def api_stats():
 def api_status():
     """API endpoint for bot status"""
     return jsonify({"running": is_bot_running})
+
+# Custom Jinja2 filter for newlines
+@app.template_filter('nl2br')
+def nl2br(value):
+    """Convert newlines to <br> tags for display in HTML."""
+    if value:
+        return value.replace('\n', '<br>')
+    return ''
+
+@app.route('/test', methods=['GET'])
+def test_page():
+    """Page to test OpenAI response generation."""
+    return render_template('test_response.html')
+
+@app.route('/test_response', methods=['POST'])
+def test_response():
+    """Generate a test AI response."""
+    customer_name = request.form.get('customer_name', 'Cliente Teste')
+    complaint_text = request.form.get('complaint_text', '')
+    
+    if not complaint_text:
+        flash('Por favor, insira o texto da reclamação.', 'warning')
+        return redirect(url_for('test_page'))
+    
+    try:
+        # Initialize OpenAI responder
+        responder = IAResponder(api_key=OPENAI_API_KEY)
+        
+        # Time the response generation
+        start_time = time.time()
+        response_text = responder.generate_response(complaint_text)
+        generation_time = round(time.time() - start_time, 2)
+        
+        return render_template(
+            'test_response.html',
+            customer_name=customer_name,
+            complaint_text=complaint_text,
+            response_text=response_text,
+            generation_time=generation_time,
+            model_name=responder.model
+        )
+        
+    except Exception as e:
+        logger.error(f"Error generating test response: {str(e)}")
+        flash(f'Erro ao gerar resposta: {str(e)}', 'danger')
+        return redirect(url_for('test_page'))
+
+@app.route('/save_test', methods=['POST'])
+def save_test():
+    """Save test complaint and response to database."""
+    customer_name = request.form.get('customer_name', 'Cliente Teste')
+    complaint_text = request.form.get('complaint_text', '')
+    response_text = request.form.get('response_text', '')
+    
+    if not all([customer_name, complaint_text, response_text]):
+        flash('Dados incompletos para salvar.', 'warning')
+        return redirect(url_for('test_page'))
+    
+    # Generate a unique ID for this test complaint
+    import uuid
+    complaint_id = f"TEST-{uuid.uuid4().hex[:8]}"
+    
+    # Save to database
+    success = db_instance.save_complaint(
+        complaint_id=complaint_id,
+        customer_name=customer_name,
+        complaint_text=complaint_text,
+        response_text=response_text,
+        status="completed"
+    )
+    
+    if success:
+        flash('Teste salvo com sucesso no banco de dados!', 'success')
+    else:
+        flash('Erro ao salvar teste no banco de dados.', 'danger')
+    
+    return redirect(url_for('index'))
+
+@app.route('/config', methods=['GET'])
+def config_page():
+    """Configuration page."""
+    return render_template('config.html',
+                          RECLAMEAQUI_EMAIL=RECLAMEAQUI_EMAIL,
+                          RECLAMEAQUI_PASSWORD=RECLAMEAQUI_PASSWORD,
+                          OPENAI_API_KEY=OPENAI_API_KEY,
+                          CHECK_INTERVAL_MINUTES=CHECK_INTERVAL_MINUTES,
+                          BROWSER_TYPE=BROWSER_TYPE,
+                          SYSTEM_PROMPT=SYSTEM_PROMPT)
+
+@app.route('/save_config', methods=['POST'])
+def save_config():
+    """Save configuration to .env file."""
+    global RECLAMEAQUI_EMAIL, RECLAMEAQUI_PASSWORD, OPENAI_API_KEY, CHECK_INTERVAL_MINUTES, BROWSER_TYPE
+    
+    # Get form data
+    reclameaqui_email = request.form.get('reclameaqui_email', '')
+    reclameaqui_password = request.form.get('reclameaqui_password', '')
+    openai_api_key = request.form.get('openai_api_key', '')
+    check_interval = request.form.get('check_interval', '60')
+    browser_type = request.form.get('browser_type', 'chrome')
+    
+    # Validate inputs
+    try:
+        check_interval_int = int(check_interval)
+        if check_interval_int < 5 or check_interval_int > 1440:
+            raise ValueError("Intervalo deve estar entre 5 e 1440 minutos")
+    except ValueError:
+        flash('Intervalo de verificação inválido. Deve ser um número entre 5 e 1440.', 'danger')
+        return redirect(url_for('config_page'))
+    
+    if browser_type not in ['chrome', 'firefox']:
+        flash('Tipo de navegador inválido.', 'danger')
+        return redirect(url_for('config_page'))
+    
+    # Update environment variables
+    RECLAMEAQUI_EMAIL = reclameaqui_email
+    RECLAMEAQUI_PASSWORD = reclameaqui_password
+    OPENAI_API_KEY = openai_api_key
+    CHECK_INTERVAL_MINUTES = check_interval_int
+    BROWSER_TYPE = browser_type
+    
+    # Update .env file
+    try:
+        with open('.env', 'w') as f:
+            f.write(f"# Reclame Aqui login credentials\n")
+            f.write(f"RECLAMEAQUI_EMAIL={reclameaqui_email}\n")
+            f.write(f"RECLAMEAQUI_PASSWORD={reclameaqui_password}\n")
+            f.write(f"\n# OpenAI API Key\n")
+            f.write(f"OPENAI_API_KEY={openai_api_key}\n")
+            f.write(f"\n# How often to check for new complaints (in minutes)\n")
+            f.write(f"CHECK_INTERVAL_MINUTES={check_interval_int}\n")
+            f.write(f"\n# Browser type (chrome or firefox)\n")
+            f.write(f"BROWSER_TYPE={browser_type}\n")
+            
+            # Preserve system prompt if it exists
+            if SYSTEM_PROMPT:
+                f.write(f"\n# System prompt for OpenAI\n")
+                f.write(f"SYSTEM_PROMPT=\"{SYSTEM_PROMPT}\"\n")
+        
+        flash('Configurações salvas com sucesso!', 'success')
+        logger.info("Configuration updated and saved to .env file")
+        
+    except Exception as e:
+        flash(f'Erro ao salvar configurações: {str(e)}', 'danger')
+        logger.error(f"Error saving configuration to .env file: {str(e)}")
+    
+    return redirect(url_for('config_page'))
+
+@app.route('/save_prompt', methods=['POST'])
+def save_prompt():
+    """Save system prompt to .env file."""
+    global SYSTEM_PROMPT
+    
+    # Get form data
+    system_prompt = request.form.get('system_prompt', '')
+    
+    if not system_prompt:
+        flash('O prompt não pode estar vazio.', 'warning')
+        return redirect(url_for('config_page'))
+    
+    # Update environment variable
+    SYSTEM_PROMPT = system_prompt
+    
+    # Update .env file
+    try:
+        # Read existing .env file content
+        env_content = ""
+        with open('.env', 'r') as f:
+            env_content = f.read()
+        
+        # Check if SYSTEM_PROMPT already exists
+        if "SYSTEM_PROMPT=" in env_content:
+            # Replace existing prompt
+            import re
+            pattern = r'SYSTEM_PROMPT=.*(\n|$)'
+            env_content = re.sub(pattern, f'SYSTEM_PROMPT="{system_prompt}"\n', env_content)
+            
+            with open('.env', 'w') as f:
+                f.write(env_content)
+        else:
+            # Append to file
+            with open('.env', 'a') as f:
+                f.write(f"\n# System prompt for OpenAI\n")
+                f.write(f'SYSTEM_PROMPT="{system_prompt}"\n')
+        
+        # Update prompt in IAResponder class
+        flash('Prompt do sistema salvo com sucesso!', 'success')
+        logger.info("System prompt updated and saved to .env file")
+        
+    except Exception as e:
+        flash(f'Erro ao salvar prompt: {str(e)}', 'danger')
+        logger.error(f"Error saving system prompt to .env file: {str(e)}")
+    
+    return redirect(url_for('config_page'))
 
 # Create templates directory and needed templates
 if not os.path.exists('templates'):

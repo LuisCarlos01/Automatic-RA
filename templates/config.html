@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurações{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Configurações</h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Configuração de Credenciais e Parâmetros</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="/save_config">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2 mb-3">Reclame Aqui</h6>
+                        <div class="mb-3">
+                            <label for="reclameaqui_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="reclameaqui_email" name="reclameaqui_email" 
+                                  value="{{ RECLAMEAQUI_EMAIL or '' }}" required>
+                            <div class="form-text">Email da sua conta no Reclame Aqui</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reclameaqui_password" class="form-label">Senha</label>
+                            <input type="password" class="form-control" id="reclameaqui_password" name="reclameaqui_password" 
+                                  value="{{ RECLAMEAQUI_PASSWORD or '' }}" required>
+                            <div class="form-text">Senha da sua conta no Reclame Aqui</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2 mb-3">OpenAI</h6>
+                        <div class="mb-3">
+                            <label for="openai_api_key" class="form-label">Chave da API</label>
+                            <input type="password" class="form-control" id="openai_api_key" name="openai_api_key" 
+                                  value="{{ OPENAI_API_KEY or '' }}" required>
+                            <div class="form-text">Chave da API da OpenAI</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h6 class="border-bottom pb-2 mb-3">Configurações de Automação</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="check_interval" class="form-label">Intervalo de Verificação (minutos)</label>
+                            <input type="number" class="form-control" id="check_interval" name="check_interval" 
+                                  min="5" max="1440" value="{{ CHECK_INTERVAL_MINUTES or '60' }}" required>
+                            <div class="form-text">Frequência com que o bot verificará novas reclamações</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="browser_type" class="form-label">Navegador</label>
+                            <select class="form-select" id="browser_type" name="browser_type">
+                                <option value="chrome" {% if BROWSER_TYPE == 'chrome' %}selected{% endif %}>Chrome</option>
+                                <option value="firefox" {% if BROWSER_TYPE == 'firefox' %}selected{% endif %}>Firefox</option>
+                            </select>
+                            <div class="form-text">Navegador a ser utilizado na automação</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <button type="submit" class="btn btn-primary">Salvar Configurações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Prompt de IA</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="/save_prompt">
+                <div class="mb-3">
+                    <label for="system_prompt" class="form-label">Prompt do Sistema</label>
+                    <textarea class="form-control font-monospace" id="system_prompt" name="system_prompt" rows="8">{{ SYSTEM_PROMPT or 'Você é um atendente profissional da empresa iPass. Responda a reclamação de forma cordial, resolutiva e empática. Use linguagem formal e profissional, mas amigável. Peça desculpas pelo transtorno, reconheça o problema e ofereça soluções práticas. Encerre agradecendo a oportunidade de resolver a situação. Limite a resposta a um máximo de 500 caracteres.' }}</textarea>
+                    <div class="form-text">Instrução de contexto para o modelo de IA</div>
+                </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="button" class="btn btn-secondary me-md-2" id="reset-prompt">Restaurar Padrão</button>
+                    <button type="submit" class="btn btn-primary">Salvar Prompt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Reset prompt button
+        const resetBtn = document.getElementById('reset-prompt');
+        const promptTextarea = document.getElementById('system_prompt');
+        
+        resetBtn.addEventListener('click', function() {
+            promptTextarea.value = 'Você é um atendente profissional da empresa iPass. Responda a reclamação de forma cordial, resolutiva e empática. Use linguagem formal e profissional, mas amigável. Peça desculpas pelo transtorno, reconheça o problema e ofereça soluções práticas. Encerre agradecendo a oportunidade de resolver a situação. Limite a resposta a um máximo de 500 caracteres.';
+        });
+    });
+</script>
+{% endblock %}

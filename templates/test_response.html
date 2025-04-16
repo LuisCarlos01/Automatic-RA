@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Testar Resposta IA{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Testar Resposta da IA</h1>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Reclamação de Teste</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="/test_response">
+                        <div class="mb-3">
+                            <label for="customer_name" class="form-label">Nome do Cliente</label>
+                            <input type="text" class="form-control" id="customer_name" name="customer_name" value="{{ customer_name or 'Cliente Teste' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="complaint_text" class="form-label">Texto da Reclamação</label>
+                            <textarea class="form-control" id="complaint_text" name="complaint_text" rows="6" required>{{ complaint_text or '' }}</textarea>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Gerar Resposta</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Resposta da IA</h5>
+                </div>
+                <div class="card-body">
+                    {% if response_text %}
+                        <div class="mb-3">
+                            <p><strong>Resposta gerada para:</strong> {{ customer_name }}</p>
+                            <div class="alert alert-light mt-3">
+                                {{ response_text|nl2br }}
+                            </div>
+                            <div class="mt-4">
+                                <p><small>Gerado em {{ generation_time }} segundos utilizando o modelo {{ model_name }}</small></p>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-success copy-btn" data-clipboard-text="{{ response_text }}">
+                                Copiar Resposta
+                            </button>
+                            <form method="post" action="/save_test">
+                                <input type="hidden" name="customer_name" value="{{ customer_name }}">
+                                <input type="hidden" name="complaint_text" value="{{ complaint_text }}">
+                                <input type="hidden" name="response_text" value="{{ response_text }}">
+                                <button type="submit" class="btn btn-outline-primary w-100">
+                                    Salvar no Banco de Dados
+                                </button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            Digite uma reclamação à esquerda e clique em "Gerar Resposta" para ver a resposta da IA aqui.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize clipboard.js
+        new ClipboardJS('.copy-btn');
+        
+        // Add feedback when copying
+        const copyBtn = document.querySelector('.copy-btn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', function() {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copiado!';
+                copyBtn.classList.remove('btn-outline-success');
+                copyBtn.classList.add('btn-success');
+                
+                setTimeout(function() {
+                    copyBtn.textContent = originalText;
+                    copyBtn.classList.remove('btn-success');
+                    copyBtn.classList.add('btn-outline-success');
+                }, 2000);
+            });
+        }
+    });
+</script>
+{% endblock %}
