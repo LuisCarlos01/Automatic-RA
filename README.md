@@ -1,28 +1,27 @@
-# Reclame Aqui Bot - Automated Response System
+# Reclame Aqui Bot - Sistema de automaçao de resposta
 
-This automated system processes customer complaints from Reclame Aqui, generates AI-powered responses, and submits them directly on the platform.
+Este sistema automatizado processa reclamações de clientes do Reclame Aqui, gera respostas com tecnologia de IA e as envia diretamente para a plataforma.
 
-## 📌 Features
+## 📌 Recursos
 
-- Automated login to your Reclame Aqui account
-- Scanning and reading of new customer complaints
-- AI-powered response generation using OpenAI
-- Automated response submission
-- Local SQLite database for complaint and response tracking
-- Scheduled checking at configurable intervals
+- Login automatizado na sua conta do Reclame Aqui
+- Digitalização e leitura de novas reclamações de clientes
+- Geração de respostas com tecnologia de IA usando OpenAI
+- Envio automatizado de respostas
+- Banco de dados SQLite local para rastreamento de reclamações e respostas
+- Verificação agendada em intervalos configuráveis
 
-## 🧰 Technology Stack
+## 🧰 Pilha de Tecnologia
 
 - Python 3.x
-- Selenium for browser automation
-- OpenAI API for AI-powered responses
-- SQLite for local data storage
-- Schedule for periodic checking
+- Selenium para automação de navegador
+- API OpenAI para respostas com tecnologia de IA
+- SQLite para armazenamento local de dados
+- Agendamento para verificação periódica
 
-## 🛠️ Installation
+## 🛠️ Instalação
 
-1. Clone this repository:
-   ```
-   git clone https://github.com/yourusername/reclameaqui-bot.git
-   cd reclameaqui-bot
-   
+1. Clone este repositório:
+```
+git clone https://github.com/seunomedeusuário/reclameaqui-bot.git
+cd reclameaqui-bot
